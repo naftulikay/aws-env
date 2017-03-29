@@ -1,0 +1,31 @@
+---
+ - hosts: all
+   become: yes
+   tasks:
+     - name: setenforce 1
+       selinux: policy=targeted state=enforcing
+
+     - name: install devel packages
+       package: name={{ item }} state=present
+       with_items:
+         - make
+         - gcc
+         - kernel-devel
+         - git
+
+     - name: install epel
+       package: name=epel-release state=present
+
+     - name: install packages
+       package: name={{ item }} state=present
+       with_items:
+         - python34
+         - python34-devel
+         - ruby-devel
+         - python-pip
+         - rubygems
+
+     - name: install gems
+       gem: name={{ item }} state=present user_install=no
+       with_items:
+         - travis
