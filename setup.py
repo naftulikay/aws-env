@@ -13,7 +13,6 @@ setup(
     url = "https://github.com/naftulikay/aws-env",
     install_requires = [
         'setuptools',
-        'awscli',
     ],
     dependency_links = [],
     entry_points = {

@@ -6,6 +6,8 @@ python:
 
 matrix:
   allow_failures:
+    # ipython fails on anything other than 3.5 wtf
+    - python: '2.7'
     - python: '3.4'
 
 cache:

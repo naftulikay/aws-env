@@ -61,10 +61,61 @@ class AWSCredentialsTestCase(unittest.TestCase):
         self.assertEqual('thing', result.profiles['two'].aws_secret_access_key)
 
     def test_add(self):
-        self.fail("not implemented")
+        result = AWSCredentials()
+
+        self.assertEqual(0, len(result.profiles.keys()))
+
+        valid = AWSProfile('profile', 'key id', 'key value')
+        rc = result.add(valid)
+
+        self.assertTrue(rc)
+        self.assertEqual(valid, result.profiles.get('profile'))
+
+        # test null secret key
+        rc = result.add(AWSProfile('profile', 'key id', None))
+
+        self.assertFalse(rc)
+        self.assertEqual(1, len(result.profiles.keys()))
+
+        # test empty secret key
+        rc = result.add(AWSProfile('profile', 'key id', ''))
+
+        self.assertFalse(rc)
+        self.assertEqual(1, len(result.profiles.keys()))
+
+        # test null access key
+        rc = result.add(AWSProfile('profile', None, 'value'))
+
+        self.assertFalse(rc)
+        self.assertEqual(1, len(result.profiles.keys()))
+
+        # test empty access key
+        rc = result.add(AWSProfile('profile', '', 'value'))
+
+        self.assertFalse(rc)
+        self.assertEqual(1, len(result.profiles.keys()))
+
+        # test null profile name
+        rc = result.add(AWSProfile(None, 'key', 'value'))
+
+        self.assertFalse(rc)
+        self.assertEqual(1, len(result.profiles.keys()))
+
+        # test empty profile name
+        rc = result.add(AWSProfile('', 'key', 'value'))
+
+        self.assertFalse(rc)
+        self.assertEqual(1, len(result.profiles.keys()))
+
 
     def test_get(self):
-        self.fail("not implemented")
+        result = AWSCredentials.from_path(self.credentials_file.name)
+        test = result.get('one')
+
+        self.assertIsNotNone(test)
+        self.assertTrue(isinstance(test, AWSProfile))
+        self.assertEqual('key one', test.aws_access_key_id)
+        self.assertEqual('key two', test.aws_secret_access_key)
 
     def test_ls(self):
         result = AWSCredentials.from_path(self.credentials_file.name)

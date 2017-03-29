@@ -37,12 +37,14 @@ class AWSCredentials(object):
         self.profiles = kwargs
 
     def add(self, profile):
-        if profile.aws_access_key_id and len(profile.aws_access_key_id) > 0 and profile.aws_secret_access_key \
-                and len(profile.aws_secret_access_key) > 0:
+        if profile.name and profile.aws_access_key_id and profile.aws_secret_access_key:
             self.profiles[profile.name] = profile
             return True
         else:
             return False
+
+    def get(self, profile):
+        return self.profiles.get(profile) if profile in self.profiles.keys() else None
 
     def ls(self):
         return list(self.profiles.keys())
@@ -89,6 +91,11 @@ def main():
 
     if args.profile not in credentials.ls():
         fail("Profile {} does not exist in {}".format(args.profile, config_file_path))
+
+    profile = credentials.get(args.profile)
+
+    sys.stdout.write(profile.format(export=not args.no_export) + "\n")
+    sys.stdout.flush()
 
 
 def fail(message):
