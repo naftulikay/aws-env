@@ -17,7 +17,7 @@ cache:
 
 install:
   - python bootstrap.py
-  - bin/buildout
+  - bin/buildout -c buildout-test.cfg
 
 script: bin/test
 
