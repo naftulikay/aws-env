@@ -6,9 +6,13 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import configparser
 import os
 import sys
+
+if sys.version_info[0] < 3:
+    import ConfigParser as configparser
+else:
+    import configparser
 
 CREDENTIALS_PATH = "~/.aws/credentials"
 

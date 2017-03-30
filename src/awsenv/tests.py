@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import tempfile
+import mock
 import unittest
 
-from unittest import mock, skip
+from unittest import skip
 
 from awsenv import AWSCredentials, AWSProfile
 
