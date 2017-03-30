@@ -9,12 +9,27 @@ import argparse
 import os
 import sys
 
-if sys.version_info[0] < 3:
-    import ConfigParser as configparser
+PYTHON_VERSION = sys.version_info[0]
+
+if PYTHON_VERSION < 3:
+    from ConfigParser import ConfigParser
 else:
-    import configparser
+    from configparser import ConfigParser
 
 CREDENTIALS_PATH = "~/.aws/credentials"
+
+
+def config_to_dict(config):
+    """Takes a configparser instance and converts it into a sensible dictionary."""
+    result = {}
+
+    sections = config.sections()
+    for section in sections:
+        result[str(section)] = {
+            i[0]: i[1] for i in config.items(section)
+        }
+
+    return result
 
 
 class AWSCredentials(object):
@@ -22,15 +37,17 @@ class AWSCredentials(object):
     @classmethod
     def from_path(cls, path):
         """Load AWS credentials from a path into an AWSCredentials object."""
-        config = configparser.ConfigParser()
+        config = ConfigParser()
         config.read(path)
+
+        config = config_to_dict(config)
 
         profiles = {}
 
-        for section in config.sections():
+        for section in config.keys():
             name = section
-            key_id = config[section].get('aws_access_key_id')
-            secret_key = config[section].get('aws_secret_access_key')
+            key_id = config.get(section).get('aws_access_key_id')
+            secret_key = config.get(section).get('aws_secret_access_key')
 
             if key_id and len(key_id) > 0 and secret_key and len(secret_key) > 0:
                 profiles[name] = AWSProfile(name, key_id, secret_key)
