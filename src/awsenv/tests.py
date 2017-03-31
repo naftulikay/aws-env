@@ -1,13 +1,42 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import tempfile
 import mock
 import unittest
 
 from unittest import skip
 
-from awsenv import AWSCredentials, AWSProfile
+from awsenv import AWSCredentials, AWSProfile, config_to_dict
+
+PYTHON_VERSION = sys.version_info[0]
+
+
+class ConfigToDictTestCase(unittest.TestCase):
+
+    def test_config_to_dict_py2(self):
+        """Tests that converting a Python 2 ConfigParser object to a dictionary works as expected."""
+        if PYTHON_VERSION > 2:
+            return
+
+        from ConfigParser import ConfigParser
+        fixture = ConfigParser()
+        fixture.add_section('something')
+        fixture.set('something', 'value', 'stuff')
+
+        self.assertEqual({ 'something': { 'value': 'stuff' } }, config_to_dict(fixture))
+
+    def test_config_to_dict_py3(self):
+        """Tests that converting a Python 3 ConfigParser object to a dictionary works as expected."""
+        if PYTHON_VERSION < 3:
+            return
+
+        from configparser import ConfigParser
+        fixture = ConfigParser()
+        fixture['something'] = { 'value': 'stuff' }
+
+        self.assertEqual({ 'something': { 'value': 'stuff' } }, config_to_dict(fixture))
 
 
 class AWSCredentialsTestCase(unittest.TestCase):
@@ -31,7 +60,7 @@ class AWSCredentialsTestCase(unittest.TestCase):
             }
         }
 
-        self.credentials_file = tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=True)
+        self.credentials_file = tempfile.NamedTemporaryFile(mode='w', delete=True)
 
         for profile in profiles.keys():
             self.credentials_file.write("[{}]\n".format(profile))
