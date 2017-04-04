@@ -19,13 +19,3 @@ notifications:
   email:
     on_success: change
     on_failure: always
-
-deploy:
-  provider: pypi
-  user: naftulikay
-  password:
-    secure: s9o/yHWWrt71cIrzRCHzW5MFZJVrJr1+jjcLUmnw67XezekQLyPtkZtpvWuLbUimQn3bFvjavepJr1zZEIELJ5DnL7Hy2QRT9PWU+CdkPnDbu3biwKjxbs+P2cjnftqKO9xABS+Dus/7DTUmF8ws2fQ8RyLrgQBT+L6OBPt5gQii0N2zQLtqsipyUxVlr7zmBPgLNSrBOvE74wnRKF9Pl2KmspErWk1ixRdr79Hfna1o0rvnz0fzg5jY/2xQ+2l1w90R6cJQ3PVHEGCB+Te657PBs4c1xdX3QDCdXosiQoweZm5VMvfhQmnHm9v0X+9q4NvKY5PuBZNWtow/WL6DCi/Qw3M8mSZ+Bx+8T5+DuCHIhNjuss6Rde50d4RPEhaU4Eew4FKamRRrfuizKejrpyRvqOO+NKrNLjxp/E2K5lAtzxT5Cia3B6TEJs1U/JWEbUtsVNICBpwrZnQWDrJwqNGiRsgR2lIOFe8KSF2GKmGVfOFlcXojc0qTLshCJJ/7QYr0GahutAkqZ3BpIvaR+kf88m0ye+krxARBmrgqkbKIo1LbEa7AcLi3LvT2BCvB3nogdeljaVP3tqE7MxLLMAV/kTCEFUU6cli4LpZSoEgSK1VQFUHI/Hw4OxW3lHgBSgcyy+A57lAO/oM2MEt5zJHfICYP02JbgmF9DJzFuto=
-  on:
-    tags: true
-    distributions: sdist bdist_egg
-    repo: naftulikay/aws-env
