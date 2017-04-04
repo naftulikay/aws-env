@@ -100,7 +100,9 @@ def main():
         description="Extract AWS credentials for a given profile as environment variables.")
     parser.add_argument('-n', '--no-export', action="store_true",
         help="Do not use export on the variables.")
-    parser.add_argument("profile", help="The profile in ~/.aws/credentials to extract credentials for.")
+    parser.add_argument('-l', '--ls', dest="list", action="store_true", help="List available profiles.")
+    parser.add_argument("profile", nargs="?", default="default",
+        help="The profile in ~/.aws/credentials to extract credentials for. Defaults to 'default'.")
     args = parser.parse_args()
 
     config_file_path = os.path.expanduser(CREDENTIALS_PATH)
@@ -109,6 +111,17 @@ def main():
         fail("Unable to load credentials file from {}".format(config_file_path))
 
     credentials = AWSCredentials.from_path(config_file_path)
+
+    if args.list:
+        if len(credentials.ls()) < 1:
+            sys.stderr.write("ERROR: {}\n".format("No profiles found."))
+            sys.stderr.flush()
+            return 1
+
+        # just list the profiles and get out
+        sys.stdout.write("{}\n".format("\n".join(sorted(credentials.ls()))))
+        sys.stdout.flush()
+        return 0
 
     if args.profile not in credentials.ls():
         fail("Profile {} does not exist in {}".format(args.profile, config_file_path))
