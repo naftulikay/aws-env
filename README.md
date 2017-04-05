@@ -67,6 +67,24 @@ To install `aws-env` system-wide:
 sudo pip install git+https://github.com/naftulikay/aws-env@v1.0.0
 ```
 
+## Building
+
+This project uses [`buildout`][buildout] to manage the project. Simply put, to get started you can use a `virtualenv`
+if you'd like, then install the requirements:
+
+```shell
+$ pip install --user -r requirments.txt
+```
+
+Next, build the project:
+
+```shell
+$ buildout
+```
+
+You should now have all dependencies and some scripts in `bin/` such as `bin/test`, `bin/python`, `bin/ipython`, and
+`bin/aws-env`. Buildout is rad.
+
 ## License
 
 Read the file called `LICENSE`, but it's basically MIT. If you want or need a dual-license for some reason that I have
@@ -76,3 +94,4 @@ yet to understand, please ask and I can dual-license it as appropriate.
  [svg-travis]: https://travis-ci.org/naftulikay/aws-env.svg?branch=master
  [releases]: https://github.com/naftulikay/aws-env/releases
  [keybase]: https://keybase.io/naftulikay
+ [buildout]: https://github.com/buildout/buildout

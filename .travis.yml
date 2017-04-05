@@ -14,12 +14,10 @@ cache:
   - eggs/
 
 before_install:
-  - pip install --upgrade pip
+  - pip install -r requirements.txt
 
 install:
-  - pip --version
-  - python bootstrap.py
-  - bin/buildout
+  - buildout
 
 script: bin/test
 
