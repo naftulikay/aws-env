@@ -1,3 +1,7 @@
+---
+dist: trusty
+sudo: false
+
 language: python
 python:
   - '2.7'
@@ -9,9 +13,13 @@ cache:
   directories:
   - eggs/
 
+before_install:
+  - pip install --upgrade pip
+
 install:
+  - pip --version
   - python bootstrap.py
-  - bin/buildout -c buildout-test.cfg
+  - bin/buildout
 
 script: bin/test
 
