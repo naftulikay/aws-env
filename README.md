@@ -13,14 +13,19 @@ usage: aws-env [-h] [-n] [-l] [profile]
 Extract AWS credentials for a given profile as environment variables.
 
 positional arguments:
-  profile          The profile in ~/.aws/credentials to extract credentials
-                   for. Defaults to 'default'.
+  profile          The profile in ~/.aws/credentials or ~/.aws/credentials.d/
+                   to extract credentials for. Defaults to 'default'.
 
 optional arguments:
   -h, --help       show this help message and exit
   -n, --no-export  Do not use export on the variables.
   -l, --ls         List available profiles.
 ```
+
+`aws-env` looks first at `~/.aws/credentials` and then at all files in `~/.aws/credentials.d/` if found and merges all
+of them together in a dictionary of profiles. `~/.aws/credentials` is loaded first and everything loaded from
+`~/.aws/credentials.d/` are loaded in alphabetically sorted order and merged in. (See
+[Encrypted Credential Files](#Encrypted Credential Files) for instructions on using encrypted credential files.)
 
 If you have a profile named `brangus`, you can extract environment variables like so:
 
@@ -42,6 +47,25 @@ This will cause your shell to execute the output of `aws-env`, exporting these e
 > establish trust. All commits and releases here are [PGP signed][keybase] with my key, so if you know me and trust me,
 > you should be able to use this, but as always, _read the source code_ and check it before you blindly pipe code into
 > your shell session.
+
+### Encrypted Credential Files
+
+`aws-env` now supports encrypted credential files! Stash files ending in `.asc`, `.gpg`, or `.pgp` in
+`~/.aws/credentials.d/` and `aws-env` will attempt to decrypt these files using GnuPG. `gpg2` is preferred but `gpg`
+will be used as a backup option.
+
+`aws-env` will decrypt files directly into memory. File format should be the same as `~/.aws/credentials`. Here's a
+sample `tree` output detailing the directory layout:
+
+```
+/home/naftuli/.aws
+├── config
+├── credentials
+└── credentials.d
+    └── naftulikay.asc
+
+1 directory, 3 files
+```
 
 ## Installation
 

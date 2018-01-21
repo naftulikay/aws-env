@@ -1,4 +1,4 @@
-/ansible/galaxy_roles/
+
 /bin/
 /build/
 /develop-eggs/
@@ -7,8 +7,10 @@
 /parts/
 /src/*.egg-info
 
+/.ansible/
 /.eggs/
 /.installed.cfg
+/.python-version
 /.vagrant
 
 __pycache__

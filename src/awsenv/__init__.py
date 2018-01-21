@@ -7,6 +7,7 @@
 
 import argparse
 import os
+import subprocess
 import sys
 
 PYTHON_VERSION = sys.version_info[0]
@@ -16,7 +17,11 @@ if PYTHON_VERSION < 3:
 else:
     from configparser import ConfigParser
 
-CREDENTIALS_PATH = "~/.aws/credentials"
+CREDENTIALS_ROOT = os.path.expanduser("~/.aws")
+CREDENTIALS_PATH = os.path.join(CREDENTIALS_ROOT, 'credentials')
+CREDENTIALS_D_PATH  = os.path.join(CREDENTIALS_ROOT, 'credentials.d')
+
+
 
 
 def config_to_dict(config):
@@ -32,27 +37,97 @@ def config_to_dict(config):
     return result
 
 
+class GnuPG(object):
+    """GnuPG utility class."""
+
+    __GNUPG_PATH = None
+
+    @classmethod
+    def path(cls):
+        """Returns the absolute path to (in order) GnuPG 2 or GnuPG 1."""
+        if not cls.__GNUPG_PATH:
+            for trial in ['gpg2', 'gpg']:
+                p = subprocess.Popen(['which', trial], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, _ = p.communicate()
+
+                if p.returncode == 0:
+                    cls.__GNUPG_PATH = stdout.strip().decode('utf-8')
+                    return cls.__GNUPG_PATH
+
+        return cls.__GNUPG_PATH
+
+
 class AWSCredentials(object):
 
     @classmethod
-    def from_path(cls, path):
-        """Load AWS credentials from a path into an AWSCredentials object."""
+    def find_files(cls):
+        """Find credentials files and return a list."""
+        if not os.path.isdir(CREDENTIALS_D_PATH):
+            return [CREDENTIALS_PATH]
+
+        credentials_d_files = list(
+            filter(lambda p: os.path.isfile(p), sorted(map(lambda p: os.path.join(CREDENTIALS_D_PATH, p),
+                os.listdir(CREDENTIALS_D_PATH))))
+        )
+
+        return [CREDENTIALS_PATH] + credentials_d_files
+
+    @classmethod
+    def __load_encrypted(cls, p):
+        """Loads an encrypted file into a dictionary of profile names to access and secret keys."""
+        decrypter = subprocess.Popen([GnuPG.path(), '-d', p], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, _ = decrypter.communicate()
+
+        if not decrypter.returncode == 0:
+            fail("ERROR: Unable to decrypt {}".format(p))
+
+        contents = stdout.strip().decode('utf-8')
+
         config = ConfigParser()
-        config.read(path)
 
-        config = config_to_dict(config)
+        try:
+            config.read_string(contents)
+        except:
+            fail("ERROR: Unable to parse {} as an INI-structured file.".format(p))
 
-        profiles = {}
+        return config_to_dict(config)
 
-        for section in config.keys():
-            name = section
-            key_id = config.get(section).get('aws_access_key_id')
-            secret_key = config.get(section).get('aws_secret_access_key')
+    @classmethod
+    def __load_plaintext(cls, p):
+        """Loads a plaintext file into a dictionary of profile names to access and secret keys."""
+        config = ConfigParser()
 
-            if key_id and len(key_id) > 0 and secret_key and len(secret_key) > 0:
-                profiles[name] = AWSProfile(name, key_id, secret_key)
+        try:
+            config.read(p)
+        except:
+            fail("ERROR: Unable to load {} as an INI-structured file.".format(p))
 
-        return AWSCredentials(**profiles)
+        return config_to_dict(config)
+
+    @classmethod
+    def load(cls):
+        """Load all credentials into a dictionary."""
+        result = {}
+
+        for p in cls.find_files():
+            if p.lower().endswith('.asc') or p.lower().endswith('.gpg') or p.lower().endswith('.pgp'):
+                data = cls.__load_encrypted(p)
+            else:
+                data = cls.__load_plaintext(p)
+
+            data.update(result)
+            result = data
+
+        profile_map = {}
+
+        for name in result.keys():
+            profile = result[name]
+            key_id, secret_key = profile.get('aws_access_key_id'), profile.get('aws_secret_access_key')
+
+            if len(key_id or '') > 0 and len(secret_key or '') > 0:
+                profile_map[name] = AWSProfile(name=name, key_id=key_id, secret_key=secret_key)
+
+        return AWSCredentials(**profile_map)
 
     def __init__(self, **kwargs):
         self.profiles = kwargs
@@ -102,29 +177,24 @@ def main():
         help="Do not use export on the variables.")
     parser.add_argument('-l', '--ls', dest="list", action="store_true", help="List available profiles.")
     parser.add_argument("profile", nargs="?", default="default",
-        help="The profile in ~/.aws/credentials to extract credentials for. Defaults to 'default'.")
+        help="The profile in ~/.aws/credentials or ~/.aws/credentials.d/ to extract credentials for. Defaults to 'default'.")
     args = parser.parse_args()
 
-    config_file_path = os.path.expanduser(CREDENTIALS_PATH)
+    credentials = AWSCredentials.load()
 
-    if not os.path.isfile(config_file_path):
-        fail("Unable to load credentials file from {}".format(config_file_path))
-
-    credentials = AWSCredentials.from_path(config_file_path)
+    user_cred_path = CREDENTIALS_PATH.replace(os.environ.get('HOME'), '~')
+    user_cred_d_path = CREDENTIALS_D_PATH.replace(os.environ.get('HOME'), '~') + os.path.sep
 
     if args.list:
         if len(credentials.ls()) < 1:
-            sys.stderr.write("ERROR: {}\n".format("No profiles found."))
-            sys.stderr.flush()
-            return 1
+            fail("ERROR: No profiles found in {}, {}".format(user_cred_path, user_cred_d_path))
 
         # just list the profiles and get out
-        sys.stdout.write("{}\n".format("\n".join(sorted(credentials.ls()))))
-        sys.stdout.flush()
+        print('\n'.join(sorted(credentials.ls())))
         return 0
 
     if args.profile not in credentials.ls():
-        fail("Profile {} does not exist in {}".format(args.profile, config_file_path))
+        fail("Profile '{}' not found in {}, {}/".format(args.profile, user_cred_path, user_cred_d_path))
 
     profile = credentials.get(args.profile)
 
@@ -136,6 +206,7 @@ def fail(message):
     sys.stderr.write(message + "\n")
     sys.stderr.flush()
     sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

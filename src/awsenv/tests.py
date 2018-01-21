@@ -8,9 +8,19 @@ import unittest
 
 from unittest import skip
 
-from awsenv import AWSCredentials, AWSProfile, config_to_dict
+from awsenv import AWSCredentials, AWSProfile, config_to_dict, GnuPG
 
 PYTHON_VERSION = sys.version_info[0]
+
+
+class GnuPGTestCase(unittest.TestCase):
+
+    def test_load(self):
+        """Tests that finding GnuPG works."""
+        detected_path = GnuPG.path()
+
+        self.assertIsNotNone(detected_path)
+        self.assertIn(detected_path, ['/usr/bin/gpg2', '/usr/bin/gpg'])
 
 
 class ConfigToDictTestCase(unittest.TestCase):
@@ -75,21 +85,6 @@ class AWSCredentialsTestCase(unittest.TestCase):
 
         self.credentials_file.flush()
 
-    def test_from_path(self):
-        result = AWSCredentials.from_path(self.credentials_file.name)
-
-        # only two were fully valid
-        self.assertEqual(2, len(result.profiles.keys()))
-        # validate number one
-        self.assertTrue(isinstance(result.profiles.get('one'), AWSProfile))
-        self.assertEqual('one', result.profiles['one'].name)
-        self.assertEqual('key one', result.profiles['one'].aws_access_key_id)
-        self.assertEqual('key two', result.profiles['one'].aws_secret_access_key)
-        # validate number two
-        self.assertTrue('two', result.profiles['two'].name)
-        self.assertEqual('another', result.profiles['two'].aws_access_key_id)
-        self.assertEqual('thing', result.profiles['two'].aws_secret_access_key)
-
     def test_add(self):
         result = AWSCredentials()
 
@@ -139,7 +134,7 @@ class AWSCredentialsTestCase(unittest.TestCase):
 
 
     def test_get(self):
-        result = AWSCredentials.from_path(self.credentials_file.name)
+        result = AWSCredentials(one=AWSProfile('one', 'key one', 'key two'))
         test = result.get('one')
 
         self.assertIsNotNone(test)
@@ -148,7 +143,7 @@ class AWSCredentialsTestCase(unittest.TestCase):
         self.assertEqual('key two', test.aws_secret_access_key)
 
     def test_ls(self):
-        result = AWSCredentials.from_path(self.credentials_file.name)
+        result = AWSCredentials(one=AWSProfile('one', 'a', 'b'), two=AWSProfile('two', 'a', 'b'))
         self.assertEqual(set(['one', 'two']), set(result.ls()))
 
 
