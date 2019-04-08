@@ -62,6 +62,11 @@ class AWSCredentialsTestCase(unittest.TestCase):
                 'aws_access_key_id': 'another',
                 'aws_secret_access_key': 'thing',
             },
+            'three': {
+                'aws_access_key_id': 'another',
+                'aws_secret_access_key': 'thing',
+                'aws_session_token': 'here',
+            },
             'blank_id': {
                 'aws_secret_access_key': 'value'
             },
@@ -134,38 +139,43 @@ class AWSCredentialsTestCase(unittest.TestCase):
 
 
     def test_get(self):
-        result = AWSCredentials(one=AWSProfile('one', 'key one', 'key two'))
+        result = AWSCredentials(one=AWSProfile('one', 'key one', 'key two', 'key three'))
         test = result.get('one')
 
         self.assertIsNotNone(test)
         self.assertTrue(isinstance(test, AWSProfile))
         self.assertEqual('key one', test.aws_access_key_id)
         self.assertEqual('key two', test.aws_secret_access_key)
+        self.assertEqual('key three', test.aws_session_token)
 
     def test_ls(self):
-        result = AWSCredentials(one=AWSProfile('one', 'a', 'b'), two=AWSProfile('two', 'a', 'b'))
-        self.assertEqual(set(['one', 'two']), set(result.ls()))
+        result = AWSCredentials(one=AWSProfile('one', 'a', 'b'), two=AWSProfile('two', 'a', 'b'), three=AWSProfile('three', 'a', 'b', 'c'))
+        self.assertEqual(set(['one', 'two', 'three']), set(result.ls()))
 
 
 class AWSProfileTestCase(unittest.TestCase):
 
     def test_constructor(self):
-        fixture = AWSProfile('profile one', 'access key id', 'secret access key')
+        fixture = AWSProfile('profile one', 'access key id', 'secret access key', 'session token')
 
         self.assertEqual('profile one', fixture.name)
         self.assertEqual('access key id', fixture.key_id)
         self.assertEqual('secret access key', fixture.secret_key)
+        self.assertEqual('session token', fixture.session_token)
 
     def test_format(self):
-        fixture = AWSProfile(None, 'a', 'b')
-        result_export = "export AWS_ACCESS_KEY_ID=a\nexport AWS_SECRET_ACCESS_KEY=b"
-        result_no_export = "AWS_ACCESS_KEY_ID=a\nAWS_SECRET_ACCESS_KEY=b"
+        fixture = AWSProfile(None, 'a', 'b', 'c')
+        result_export = "export AWS_ACCESS_KEY_ID=a\nexport AWS_SECRET_ACCESS_KEY=b\nexport AWS_SESSION_TOKEN=c"
+        result_no_export = "AWS_ACCESS_KEY_ID=a\nAWS_SECRET_ACCESS_KEY=b\nAWS_SESSION_TOKEN=c"
 
         self.assertEqual(result_export, fixture.format())
         self.assertEqual(result_no_export, fixture.format(export=False))
 
     def test_access_key_id(self):
-        self.assertEqual('access key id', AWSProfile(None, 'access key id', None).aws_access_key_id)
+        self.assertEqual('access key id', AWSProfile(None, 'access key id', None, None).aws_access_key_id)
 
     def test_secret_access_key(self):
-        self.assertEqual('secret access key', AWSProfile(None, None, 'secret access key').aws_secret_access_key)
+        self.assertEqual('secret access key', AWSProfile(None, None, 'secret access key', None).aws_secret_access_key)
+
+    def test_session_token(self):
+        self.assertEqual('session token', AWSProfile(None, None, None, 'session token').aws_session_token)

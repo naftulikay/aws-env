@@ -122,9 +122,11 @@ class AWSCredentials(object):
 
         for name in result.keys():
             profile = result[name]
-            key_id, secret_key = profile.get('aws_access_key_id'), profile.get('aws_secret_access_key')
+            key_id, secret_key, session_token = profile.get('aws_access_key_id'), profile.get('aws_secret_access_key'), profile.get('aws_session_token')
 
-            if len(key_id or '') > 0 and len(secret_key or '') > 0:
+            if len(key_id or '') > 0 and len(secret_key or '') > 0 and len(session_token or '') > 0:
+                profile_map[name] = AWSProfile(name=name, key_id=key_id, secret_key=secret_key, session_token=session_token)
+            elif len(key_id or '') > 0 and len(secret_key or ''):
                 profile_map[name] = AWSProfile(name=name, key_id=key_id, secret_key=secret_key)
 
         return AWSCredentials(**profile_map)
@@ -148,18 +150,25 @@ class AWSCredentials(object):
 
 class AWSProfile(object):
 
-    def __init__(self, name, key_id, secret_key):
+    def __init__(self, name, key_id, secret_key, session_token=None):
         self.name = name
         self.key_id = key_id
         self.secret_key = secret_key
+        self.session_token = session_token
 
     def format(self, export=True):
         """Formats the AWS credentials for the shell."""
-        return "\n".join([
-            "{}AWS_ACCESS_KEY_ID={}".format("export " if export else "", self.aws_access_key_id),
-            "{}AWS_SECRET_ACCESS_KEY={}".format("export " if export else "", self.aws_secret_access_key)
-        ])
-
+        if self.aws_session_token:
+            return "\n".join([
+                "{}AWS_ACCESS_KEY_ID={}".format("export " if export else "", self.aws_access_key_id),
+                "{}AWS_SECRET_ACCESS_KEY={}".format("export " if export else "", self.aws_secret_access_key),
+                "{}AWS_SESSION_TOKEN={}".format("export " if export else "", self.aws_session_token)
+            ])
+        else:
+            return "\n".join([
+                "{}AWS_ACCESS_KEY_ID={}".format("export " if export else "", self.aws_access_key_id),
+                "{}AWS_SECRET_ACCESS_KEY={}".format("export " if export else "", self.aws_secret_access_key)
+            ])
     @property
     def aws_access_key_id(self):
         return self.key_id
@@ -167,6 +176,10 @@ class AWSProfile(object):
     @property
     def aws_secret_access_key(self):
         return self.secret_key
+
+    @property
+    def aws_session_token(self):
+        return self.session_token
 
 
 
