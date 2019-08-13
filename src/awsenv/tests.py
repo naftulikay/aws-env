@@ -164,9 +164,9 @@ class AWSProfileTestCase(unittest.TestCase):
         self.assertEqual('session token', fixture.session_token)
 
     def test_format(self):
-        fixture = AWSProfile(None, 'a', 'b', 'c')
-        result_export = "export AWS_ACCESS_KEY_ID=a\nexport AWS_SECRET_ACCESS_KEY=b\nexport AWS_SESSION_TOKEN=c"
-        result_no_export = "AWS_ACCESS_KEY_ID=a\nAWS_SECRET_ACCESS_KEY=b\nAWS_SESSION_TOKEN=c"
+        fixture = AWSProfile('p', 'a', 'b', 'c')
+        result_export = "export AWS_ACCESS_KEY_ID=a\nexport AWS_SECRET_ACCESS_KEY=b\nexport AWS_SESSION_TOKEN=c\nexport AWS_PROFILE=p"
+        result_no_export = "AWS_ACCESS_KEY_ID=a\nAWS_SECRET_ACCESS_KEY=b\nAWS_SESSION_TOKEN=c\nAWS_PROFILE=p"
 
         self.assertEqual(result_export, fixture.format())
         self.assertEqual(result_no_export, fixture.format(export=False))
