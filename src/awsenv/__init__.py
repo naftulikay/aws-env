@@ -162,12 +162,14 @@ class AWSProfile(object):
             return "\n".join([
                 "{}AWS_ACCESS_KEY_ID={}".format("export " if export else "", self.aws_access_key_id),
                 "{}AWS_SECRET_ACCESS_KEY={}".format("export " if export else "", self.aws_secret_access_key),
-                "{}AWS_SESSION_TOKEN={}".format("export " if export else "", self.aws_session_token)
+                "{}AWS_SESSION_TOKEN={}".format("export " if export else "", self.aws_session_token),
+                "{}AWS_PROFILE={}".format("export " if export else "", self.name)
             ])
         else:
             return "\n".join([
                 "{}AWS_ACCESS_KEY_ID={}".format("export " if export else "", self.aws_access_key_id),
-                "{}AWS_SECRET_ACCESS_KEY={}".format("export " if export else "", self.aws_secret_access_key)
+                "{}AWS_SECRET_ACCESS_KEY={}".format("export " if export else "", self.aws_secret_access_key),
+                "{}AWS_PROFILE={}".format("export " if export else "", self.name)
             ])
     @property
     def aws_access_key_id(self):

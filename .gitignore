@@ -12,6 +12,7 @@
 /.installed.cfg
 /.python-version
 /.vagrant
+/.idea
 
 __pycache__
 *.pyc
