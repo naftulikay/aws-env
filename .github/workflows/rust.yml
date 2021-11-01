@@ -1,0 +1,40 @@
+---
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch: {}
+
+env:
+  CACHE_VERSION: v1
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
+      - uses: actions/cache@v2
+        with:
+          key: "${{ runner.os }}-rust-${{ env.CACHE_VERSION }}-${{ hashFiles('Cargo.lock') }}-${{ github.sha }}"
+          restore-keys: |
+            ${{ runner.os }}-rust-${{ env.CACHE_VERSION }}-${{ hashFiles('Cargo.lock') }}
+            ${{ runner.os }}-rust-${{ env.CACHE_VERSION }}
+          path: |
+            ~/.cargo
+            ./target
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
