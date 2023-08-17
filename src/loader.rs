@@ -91,44 +91,50 @@ impl AwsCredentials {
         let (plain_sync, encrypted_sync) =
             (Arc::new(Semaphore::new(32)), Arc::new(Semaphore::new(4)));
 
-        let handles = ReadDirStream::new(fs::read_dir(&creds_d).await.map_err(|e| {
-            log::error!("Unable to read directory: {}", e);
-            e
-        })?)
-        .filter_map(|e| {
-            // NOTE according to docs, this will only fail if there is an intermittent I/O error, not worth handling
-            e.ok()
-        })
-        .map(|e| e.path())
-        .chain(stream::iter(vec![aws_config_dir.join("credentials")]))
-        .filter(|p| p.is_file())
-        .map(|p| {
-            let (plain_permit, encrypted_permit) = (plain_sync.clone(), encrypted_sync.clone());
+        let creds_files: Vec<PathBuf> = match fs::read_dir(&creds_d).await {
+            Ok(creds) => {
+                ReadDirStream::new(creds)
+                    .filter_map(|f| f.ok())
+                    .map(|f| f.path())
+                    .collect()
+                    .await
+            }
+            Err(_) => {
+                log::debug!("No $HOME/.aws/credentials.d directory found");
+                vec![]
+            }
+        };
 
-            tokio::spawn(async {
-                let name = p.file_name().unwrap().to_string_lossy();
+        let handles = stream::iter(creds_files)
+            .chain(stream::iter(vec![aws_config_dir.join("credentials")]))
+            .filter(|p| p.is_file())
+            .map(|p| {
+                let (plain_permit, encrypted_permit) = (plain_sync.clone(), encrypted_sync.clone());
 
-                if name.ends_with(".asc") || name.ends_with(".gpg") || name.ends_with(".pgp") {
-                    Some({
-                        let work = encrypted_permit.acquire_owned().await.unwrap();
-                        let r = AwsCredentialsFile::load_encrypted(p).await;
-                        drop(work);
-                        r
-                    })
-                } else if name.ends_with(".ini") || name.ends_with("") {
-                    Some({
-                        let work = plain_permit.acquire_owned().await.unwrap();
-                        let r = AwsCredentialsFile::load(p).await;
-                        drop(work);
-                        r
-                    })
-                } else {
-                    log::debug!("Skipping file with unknown extension {}", p.display());
-                    None
-                }
+                tokio::spawn(async {
+                    let name = p.file_name().unwrap().to_string_lossy();
+
+                    if name.ends_with(".asc") || name.ends_with(".gpg") || name.ends_with(".pgp") {
+                        Some({
+                            let work = encrypted_permit.acquire_owned().await.unwrap();
+                            let r = AwsCredentialsFile::load_encrypted(p).await;
+                            drop(work);
+                            r
+                        })
+                    } else if name.ends_with(".ini") || name.ends_with("") {
+                        Some({
+                            let work = plain_permit.acquire_owned().await.unwrap();
+                            let r = AwsCredentialsFile::load(p).await;
+                            drop(work);
+                            r
+                        })
+                    } else {
+                        log::debug!("Skipping file with unknown extension {}", p.display());
+                        None
+                    }
+                })
             })
-        })
-        .collect::<Vec<JoinHandle<_>>>();
+            .collect::<Vec<JoinHandle<_>>>();
 
         let mut credentials = BTreeSet::new();
 
